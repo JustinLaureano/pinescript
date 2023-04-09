@@ -1,0 +1,121 @@
+//@version=5
+indicator("Key Bars", overlay=true)
+
+// ### Constant Declarations Here ###
+
+// This is the length of days we will look back to create an average
+var average_length = 10
+
+// This will keep a running count of how many days have been calculated
+var day_count = 0
+
+// This will be the current bar index for the current trading day
+var bar_count = 0
+
+// These arrays will hold volume data for each bar during that day.
+// The arrays named day_{x} will be rotated out with the most recent
+// ten days worth of volume data at the beginning of each new trading day.
+var current_day = array.new_float()
+var day_1 = array.new_float()
+var day_2 = array.new_float()
+var day_3 = array.new_float()
+var day_4 = array.new_float()
+var day_5 = array.new_float()
+var day_6 = array.new_float()
+var day_7 = array.new_float()
+var day_8 = array.new_float()
+var day_9 = array.new_float()
+var day_10 = array.new_float()
+
+
+// ### General Calculations Here ###
+
+// Increment the bar count of each candle
+bar_count := bar_count + 1
+
+// Determine if the current bar is the first of a new trading day
+bool new_day = ta.change(time("D"))
+
+if new_day
+    // When a new day is encountered, we need to increment the day counter
+    // and reset the bar count back to one for the current bar
+    day_count := day_count + 1
+    bar_count := 1
+
+    // Now we will shift all the daily volume data one day back,
+    // so the oldest day of volume is dropped off and the old
+    // current days volume becomes the first day. Then the current
+    // day array is re-instantiated as an empty array to start
+    // holding the new days volume data.
+    day_10 := day_9.copy()
+    day_9 := day_8.copy()
+    day_8 := day_7.copy()
+    day_7 := day_6.copy()
+    day_6 := day_5.copy()
+    day_5 := day_4.copy()
+    day_4 := day_3.copy()
+    day_3 := day_2.copy()
+    day_2 := day_1.copy()
+    day_1 := current_day.copy()
+    current_day := array.new_float()
+
+// For every bar we should push the current volume data into the current day volume array
+array.push(current_day, volume)
+
+
+// Here we will calculate the average volume up to the current bar for the past 10 days.
+// There are situations where some days may be shortened for whatever reason and the current
+// bar is past the point that the shortened day has data. In that case, we will just use all
+// the volume data in the shortened days array. Not perfect, the best we have for now.
+float days_sum = 0
+float average_volume = 0
+
+// We only want to calculate the average once we have ten days of volume data accumulated.
+// Otherwise the calculations for the first ten days will be inaccurate.
+if day_count > 10
+    days_sum := day_1.copy().slice(0, day_1.size() < bar_count ? day_1.size() : bar_count).sum() +
+      day_2.copy().slice(0, day_2.size() < bar_count ? day_2.size() : bar_count).sum() +
+      day_3.copy().slice(0, day_3.size() < bar_count ? day_3.size() : bar_count).sum() +
+      day_4.copy().slice(0, day_4.size() < bar_count ? day_4.size() : bar_count).sum() +
+      day_5.copy().slice(0, day_5.size() < bar_count ? day_5.size() : bar_count).sum() +
+      day_6.copy().slice(0, day_6.size() < bar_count ? day_6.size() : bar_count).sum() +
+      day_7.copy().slice(0, day_7.size() < bar_count ? day_7.size() : bar_count).sum() +
+      day_8.copy().slice(0, day_8.size() < bar_count ? day_8.size() : bar_count).sum() +
+      day_9.copy().slice(0, day_9.size() < bar_count ? day_9.size() : bar_count).sum() +
+      day_10.copy().slice(0, day_10.size() < bar_count ? day_10.size() : bar_count).sum()
+
+    average_volume := days_sum / average_length
+
+// Here we will calculate the current days total volume to compare against the average
+current_volume = current_day.copy().sum()
+
+// Determine how far in percentage terms we are from the average. If the current
+// volume is less than the average, then we want the percent to be negative.
+percent_change = average_volume > current_volume
+  ? ( (average_volume - current_volume) / average_volume ) * -1
+  : (current_volume - average_volume) / average_volume
+
+// plotchar(percent_change, 'pc')
+// Determine if we hit a high intraday threshold for volume
+is_high_intraday_rvol = percent_change >= 0.2
+
+atr_over = ta.atr(20) + open
+atr_under = open - ta.atr(20)
+
+is_over_atr = close > atr_over
+is_under_atr = close < atr_under
+
+vol_sma = ta.sma(volume, 50)
+is_high_volume = volume > vol_sma and is_high_intraday_rvol
+
+bullish_key_bar = is_high_volume and is_over_atr
+bearish_key_bar = is_high_volume and is_under_atr
+
+BULLISH_KEY_BAR_COLOR = color.rgb(185, 241, 173)
+BEARISH_KEY_BAR_COLOR = color.rgb(243, 156, 156)
+
+candle_bar_color = bullish_key_bar ? BULLISH_KEY_BAR_COLOR : bearish_key_bar ? BEARISH_KEY_BAR_COLOR : na
+
+
+// ### Visuals and Plots Here ###
+barcolor(color = candle_bar_color)

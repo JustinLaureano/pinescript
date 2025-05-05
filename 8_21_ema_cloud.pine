@@ -1,0 +1,9 @@
+//@version=5
+indicator(title="8/21 EMA Cloud", shorttitle="8/21EMA", overlay=true)
+
+ema8 = ta.ema(close, 8)
+ema21 = ta.ema(close, 21)
+
+ema8plot = plot(ema8, color=color.rgb(0, 230, 119, 100), title="EMA(8)")
+ema21plot = plot(ema21, color=color.rgb(178, 40, 52, 100), title="EMA(21)")
+fill(ema8plot, ema21plot, color=ema8 > ema21 ? color.rgb(0, 230, 119, 90) : color.rgb(178, 40, 52, 85), editable=true)

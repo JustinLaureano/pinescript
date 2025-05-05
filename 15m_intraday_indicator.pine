@@ -1,0 +1,48 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © jmlaureano
+
+//@version=6
+
+// ————— Script Declaration
+indicator("15m Long/Short", overlay=true)
+
+// ————— Imports
+// ————— Constants
+// ————— Inputs
+shortEMAInput = input.int(8, 'Short EMA', minval=1)
+longEMAInput = input.int(21, 'Long EMA', 2)
+
+
+// ————— Functions
+// ————— Calculations
+
+
+is15m = timeframe.period == "15"
+isStock = syminfo.type == "stock" or syminfo.type == 'fund'
+
+// 130 15m bars in 5 traading days
+sma5D = ta.sma(close, 130)
+
+emaShort = ta.ema(close, shortEMAInput)
+emaLong = ta.ema(close, longEMAInput)
+
+isAboveSMA5D = close > sma5D
+isBelowSMA5D = close < sma5D
+
+crossOver = ta.crossover(emaShort, emaLong)
+crossUnder = ta.crossunder(emaShort, emaLong)
+
+shouldPlotLong = is15m and isStock and isAboveSMA5D and crossOver
+shouldPlotShort = is15m and isStock and isBelowSMA5D and crossUnder
+
+
+
+// ————— Strategy Calls
+// ————— Visuals
+
+plotshape(shouldPlotLong, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+plotshape(shouldPlotShort, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)
+
+
+// ————— Alerts
+// ————— Debug

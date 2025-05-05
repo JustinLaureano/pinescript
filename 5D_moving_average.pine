@@ -1,0 +1,5 @@
+//@version=6
+indicator(title="5D SMA", shorttitle="5D SMA", overlay=true, timeframe="1D", timeframe_gaps=true)
+
+five_day_sma = ta.sma(close, 5)
+plot(five_day_sma, color=color.rgb(251, 192, 45, 10), title="5D SMA")

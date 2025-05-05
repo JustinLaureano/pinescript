@@ -1,0 +1,201 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © jmlaureano
+
+//@version=5
+// strategy("Buy/Sell Indicators")
+
+
+indicator("Buy/Sell Indicators")
+
+bullish_color = color.green
+bearish_color = color.red
+neutral_color = color.gray
+
+labelColor = color.black
+labelTextColor = color.white
+labelPosition = label.style_label_left
+
+is_bullish(indicatorColor) =>
+    indicatorColor == bullish_color
+
+score = 0
+
+
+// Current Candle Bullish or Bearish
+
+currentCandleColor = close >= open ? bullish_color : bearish_color
+
+plotshape(20, "Current Candle", shape.circle, 'Absolute', currentCandleColor, display=display.all - display.status_line)
+
+if barstate.islast
+    currentCandleLabel = label.new(x=bar_index, y=20, color=labelColor, textcolor=labelTextColor, text="Current Candle", size=size.tiny)
+    label.set_style(currentCandleLabel, labelPosition)
+
+if is_bullish(currentCandleColor)
+    score += 1
+else
+    score -= 1
+
+
+// Is Daily Bullish/Bearish
+dailyPrice = request.security(syminfo.ticker, 'D', close)
+yesterdayClose = request.security(syminfo.ticker, 'D', close[1])
+dailyTickerColor = dailyPrice >= yesterdayClose ? bullish_color : bearish_color
+
+plotshape(18, "Daily Chart", shape.circle, 'Absolute', dailyTickerColor, display=display.all - display.status_line)
+
+if barstate.islast
+    dailyTickerLabel = label.new(x=bar_index, y=18, color=labelColor, textcolor=labelTextColor, text="Daily Chart", size=size.tiny)
+    label.set_style(dailyTickerLabel, labelPosition)
+
+
+// Current SPY Candle of same length, Bullish or Bearish (Neutral if ticker is SPY)
+spyCurrentPrice = request.security('SPY', timeframe.period, close)
+spyPreviousClose = request.security('SPY', timeframe.period, close[1])
+spyCurrentPeriodColor = spyCurrentPrice >= spyPreviousClose ? bullish_color : bearish_color
+
+plotshape(16, "SPY Current Candle", shape.circle, 'Absolute', spyCurrentPeriodColor, display=display.all - display.status_line)
+
+if barstate.islast
+    spyCurrentPeriodLabel = label.new(x=bar_index, y=16, color=labelColor, textcolor=labelTextColor, text="SPY Current Candle", size=size.tiny)
+    label.set_style(spyCurrentPeriodLabel, labelPosition)
+
+
+
+
+// Is SPY Daily Bullish or Bearish
+spyDailyPrice = request.security('SPY', 'D', close)
+spyYesterdayClose = request.security('SPY', 'D', close[1])
+spyDailyTickerColor = spyDailyPrice >= spyYesterdayClose ? bullish_color : bearish_color
+
+plotshape(14, "SPY Daily Chart", shape.circle, 'Absolute', spyDailyTickerColor, display=display.all - display.status_line)
+
+if barstate.islast
+    spyDailyTickerLabel = label.new(x=bar_index, y=14, color=labelColor, textcolor=labelTextColor, text="SPY Daily Chart", size=size.tiny)
+    label.set_style(spyDailyTickerLabel, labelPosition)
+
+
+// Is low of current candle higher than low of previous candle (True: Bullish or False: Bearish)
+lowerLowsColor = low > low[1] ? bullish_color : bearish_color
+
+plotshape(12, "Lower Lows", shape.circle, 'Absolute', lowerLowsColor, display=display.all - display.status_line)
+
+if barstate.islast
+    lowerLowsLabel = label.new(x=bar_index, y=12, color=labelColor, textcolor=labelTextColor, text="Lower Lows", size=size.tiny)
+    label.set_style(lowerLowsLabel, labelPosition)
+
+
+// Highs on current candle higher than highs on previous candle (True: Bullish or False: Bearish)
+higherHighsColor = high > high[1] ? bullish_color : bearish_color
+
+plotshape(10, "Higher Highs", shape.circle, 'Absolute', higherHighsColor, display=display.all - display.status_line)
+
+if barstate.islast
+    higherHighsLabel = label.new(x=bar_index, y=10, color=labelColor, textcolor=labelTextColor, text="Higher Highs", size=size.tiny)
+    label.set_style(higherHighsLabel, labelPosition)
+
+
+
+
+// Above average volume or not
+avgVolumeSMA = input(title="Avg Volume SMA", defval=50)
+avgVolume = ta.sma(volume, avgVolumeSMA)
+
+highVolumeColor = volume >= avgVolume ? bullish_color : bearish_color
+
+plotshape(8, "High Volume", shape.circle, 'Absolute', highVolumeColor, display=display.all - display.status_line)
+
+if barstate.islast
+    highVolumeLabel = label.new(x=bar_index, y=8, color=labelColor, textcolor=labelTextColor, text="High Volume", size=size.tiny)
+    label.set_style(highVolumeLabel, labelPosition)
+
+
+
+// Above or Below VWAP
+aboveVWAPColor = close >= ta.vwap ? bullish_color : bearish_color
+
+plotshape(6, "Above VWAP", shape.circle, 'Absolute', aboveVWAPColor, display=display.all - display.status_line)
+
+if barstate.islast
+    aboveVWAPLabel = label.new(x=bar_index, y=6, color=labelColor, textcolor=labelTextColor, text="Above VWAP", size=size.tiny)
+    label.set_style(aboveVWAPLabel, labelPosition)
+
+
+
+
+
+// // Above/Below 8 EMA
+shortEMA = input(title="Short EMA", defval=8)
+aboveShortEMAColor = close > ta.ema(close, shortEMA) ? bullish_color : bearish_color
+
+plotshape(4, "Above Short EMA", shape.circle, 'Absolute', aboveShortEMAColor, display=display.all - display.status_line)
+
+if barstate.islast
+    aboveShortEMALabel = label.new(x=bar_index, y=4, color=labelColor, textcolor=labelTextColor, text="Above Short EMA", size=size.tiny)
+    label.set_style(aboveShortEMALabel, labelPosition)
+
+// Above/Below 21 EMA
+mediumEMA = input(title="Medium EMA", defval=21)
+aboveMediumEMAColor = close > ta.ema(close, mediumEMA) ? bullish_color : bearish_color
+
+plotshape(2, "Above Medium EMA", shape.circle, 'Absolute', aboveMediumEMAColor, display=display.all - display.status_line)
+
+if barstate.islast
+    aboveMediumEMALabel = label.new(x=bar_index, y=2, color=labelColor, textcolor=labelTextColor, text="Above Medium EMA", size=size.tiny)
+    label.set_style(aboveMediumEMALabel, labelPosition)
+
+
+// Above/Below 34 EMA
+longEMA = input(title="Long EMA", defval=34)
+aboveLongEMAColor = close > ta.ema(close, longEMA) ? bullish_color : bearish_color
+
+plotshape(0, "Above Long EMA", shape.circle, 'Absolute', aboveLongEMAColor, display=display.all - display.status_line)
+
+if barstate.islast
+    aboveLongEMALabel = label.new(x=bar_index, y=0, color=labelColor, textcolor=labelTextColor, text="Above Long EMA", size=size.tiny)
+    label.set_style(aboveLongEMALabel, labelPosition)
+
+// Above/Below 50 SMA
+shortSMA = input(title="Short SMA", defval=50)
+aboveShortSMAColor = close > ta.sma(close, shortSMA) ? bullish_color : bearish_color
+
+plotshape(-2, "Above Short SMA", shape.circle, 'Absolute', aboveShortSMAColor, display=display.all - display.status_line)
+
+if barstate.islast
+    aboveShortSMALabel = label.new(x=bar_index, y=-2, color=labelColor, textcolor=labelTextColor, text="Above Short SMA", size=size.tiny)
+    label.set_style(aboveShortSMALabel, labelPosition)
+
+
+
+// Above Below 100SMA
+mediumSMA = input(title="Medium SMA", defval=100)
+aboveMediumSMAColor = close > ta.sma(close, mediumSMA) ? bullish_color : bearish_color
+
+plotshape(-4, "Above Medium SMA", shape.circle, 'Absolute', aboveMediumSMAColor, display=display.all - display.status_line)
+
+if barstate.islast
+    aboveMediumSMALabel = label.new(x=bar_index, y=-4, color=labelColor, textcolor=labelTextColor, text="Above Medium SMA", size=size.tiny)
+    label.set_style(aboveMediumSMALabel, labelPosition)
+
+
+// Above/Below 200SMA
+longSMA = input(title="Long SMA", defval=200)
+aboveLongSMAColor = close > ta.sma(close, longSMA) ? bullish_color : bearish_color
+
+plotshape(-6, "Above Long SMA", shape.circle, 'Absolute', aboveLongSMAColor, display=display.all - display.status_line)
+
+if barstate.islast
+    aboveLongSMALabel = label.new(x=bar_index, y=-6, color=labelColor, textcolor=labelTextColor, text="Above Long SMA", size=size.tiny)
+    label.set_style(aboveLongSMALabel, labelPosition)
+
+
+
+
+
+
+// Score
+// scoreLabel = label.new(x=bar_index, y=-8, color=labelColor, textcolor=labelTextColor, text=str.tostring(score))
+// label.set_style(scoreLabel, label.style_none)
+
+// plotshape(-8, "Score", shape.circle, 'Absolute', bullish_color, text=str.tostring(score))
+

@@ -1,0 +1,12 @@
+//@version=6
+indicator("1D VWAP", overlay=true)
+
+isToday = false
+
+if year(timenow) == year(time) and month(timenow) == month(time) and dayofmonth(timenow) == dayofmonth(time) 
+    isToday := true
+
+vwapPlot = ta.vwap(hlc3)
+
+// Plot VWAP only if the current bar is within today's session
+plot(isToday ? vwapPlot : na, color=color.new(#2962FF, 60), title="Daily VWAP")

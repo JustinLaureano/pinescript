@@ -1,0 +1,88 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © jmlaureano
+
+//@version=6
+
+// ————— Script Declaration
+indicator(title="2 Day VWAP", shorttitle="2D VWAP", overlay=true)
+
+// ————— Imports
+// ————— Constants
+// ————— Inputs
+vwapColor = input.color(color.new(#521c7e, 40), "VWAP Color")
+
+// ————— Functions
+resetVWAP(isNewPeriod, days) =>
+	isNewPeriod and days > 2
+
+computeVWAP(src, isNewPeriod) =>
+	var float sumSrcVol = na
+	var float sumVol = na
+    var float sumSrcSrcVol = na
+	var int days = last_bar_index - bar_index % 2 == 0 ? 1 : 2
+	var int cumulativeBars = 0
+	int timeframeBarCountCalc = 0
+
+	cumulativeBars := cumulativeBars + 1
+
+	if isNewPeriod
+		days := days + 1
+
+	sumSrcVol := resetVWAP(isNewPeriod, days) ? src * volume : src * volume + sumSrcVol[1]
+	sumVol := resetVWAP(isNewPeriod, days) ? volume : volume + sumVol[1]
+
+	if isNewPeriod and days == 3
+		days := 1
+		timeframeBarCountCalc := cumulativeBars
+		cumulativeBars := 0
+
+	_vwap = sumSrcVol / sumVol
+
+	[_vwap, timeframeBarCountCalc]
+
+timeChange(period) =>
+	ta.change(time(period)) != 0
+
+lastTwoDays() =>
+	last_bar_index - bar_index <= 2
+
+canBePlotted(barCount) =>
+	last_bar_index - bar_index <= barCount
+
+
+// ————— Calculations
+float vwapValue = na
+var cumulativeVol = 0.
+int timeframeBarCount = na
+var plottable = false
+src = hlc3
+
+cumulativeVol += nz(volume)
+
+if barstate.islast and cumulativeVol == 0
+    runtime.error("No volume is provided by the data vendor.")
+
+isNewPeriod = timeChange("D")
+
+if na(src[1])
+	isNewPeriod := true
+
+if not (timeframe.isdwm)
+    [_vwap, timeframeBarCountCalc] = computeVWAP(src, isNewPeriod)
+
+	vwapValue := _vwap
+
+	if timeframeBarCountCalc > 0
+		timeframeBarCount := timeframeBarCountCalc
+
+	if not plottable and canBePlotted(timeframeBarCount)
+		plottable := true
+
+
+// ————— Strategy Calls
+// ————— Visuals
+vwapPlot = plot(plottable ? vwapValue : na, title="VWAP", color=vwapColor)
+
+
+// ————— Alerts
+// ————— Debug

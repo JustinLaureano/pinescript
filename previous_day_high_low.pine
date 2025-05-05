@@ -1,0 +1,83 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © jmlaureano
+
+//@version=5
+indicator("Previous Day High/Low", shorttitle = 'yHOD/yLOD', overlay = true)
+
+
+// Abbreviations
+//      yHOD : Yesterday High of Day
+//      yLOD : Yesterday Low of Day
+//      ONH : Overnight High
+//      ONL : Overnight Low
+
+lineColor = input.color(color.white, "Line Color")
+
+// Script Functions
+draw_price_level(price, color) =>
+    line.new(
+      bar_index,
+      price,
+      bar_index + 1,
+      price,
+      extend = extend.right,
+      color = color,
+      style = line.style_dotted)
+
+
+is_new_day = ta.change(time("D")) > 0 ? true : false
+
+
+// Global Scope Variables
+
+// Used to track the High and Low of day values over time to be used for the line plot data
+var float daily_high = na
+var float prev_daily_high = na
+
+var float daily_low = na
+var float prev_daily_low = na
+
+var float onh = na
+var float prev_onh = na
+
+var float onl = na
+var float prev_onl = na
+
+
+
+
+// Calculate the yHOD and yLOD values
+prev_daily_high := is_new_day ? daily_high : prev_daily_high
+daily_high := is_new_day ? high : (high > daily_high and session.ismarket) ? high : daily_high
+
+prev_daily_low := is_new_day ? daily_low : prev_daily_low
+daily_low := is_new_day ? low : (low < daily_low and session.ismarket) ? low : daily_low
+
+
+
+
+// TODO: fix
+// Calculate the ONH and ONL values
+security_onh = request.security(ticker.modify(syminfo.tickerid, session.extended), timeframe.period, high)
+
+onh := is_new_day ? security_onh : (security_onh > onh) ? security_onh : onh
+// onh := (hour(time) > 9 or hour(time) == 9 and minute(time) >= 30) and hour(time) < 16 ? onh: security_onh
+
+
+security_onl = request.security(ticker.modify(syminfo.tickerid, session.extended), timeframe.period, low)
+
+onl := is_new_day ? security_onl : (security_onl < onl) ? security_onl : onl
+
+// On the last bar of the chart, plot the lines for yHOD, yLOD, ONH, and ONL
+if barstate.islast
+    // yHOD
+    draw_price_level(prev_daily_high, lineColor)
+
+    // yLOD
+    draw_price_level(prev_daily_low, lineColor)
+
+    // ONH
+    // draw_price_level(onh, color.yellow)
+
+    // OHL
+    // draw_price_level(onl, color.yellow)
